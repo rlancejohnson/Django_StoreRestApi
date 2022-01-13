@@ -1,5 +1,5 @@
 from rest_framework.exceptions import ValidationError
-from rest_framework.generics import ListAPIView, CreateAPIView, DestroyAPIView
+from rest_framework.generics import ListAPIView, CreateAPIView, DestroyAPIView, RetrieveUpdateDestroyAPIView # RetrieveAPIView, UpdateAPIView
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter
 from rest_framework.pagination import LimitOffsetPagination
@@ -17,7 +17,7 @@ class ProductList(ListAPIView):
 
     filter_backends = (DjangoFilterBackend, SearchFilter)
     filter_fields = ('id', )
-    search_fields = ('name', 'description')
+    search_fields = ('product_name', 'description')
 
     pagination_class = ProductsPagination
 
@@ -66,13 +66,49 @@ class ProductDestroy(DestroyAPIView):
     queryset = Product.objects.all()
     lookup_field = 'id'
 
-    # all cache related to the product need to be cleared by overriding the delete method
+    # Overriding the delete method
     def delete(self, request, *args, **kwargs):
         product_id = request.data.get('id')
         response = super().delete(request, *args, **kwargs)
 
         if response.status_code == 204:
             from django.core.cache import cache
+
+            # all cache related to the product need to be cleared
             cache.delete(f'product_data_{product_id}')
+
+        return response
+
+class ProductRetrieveUpdateDestroy(RetrieveUpdateDestroyAPIView):
+    queryset = Product.objects.all()
+    lookup_field = 'id'
+    serializer_class = ProductSerializer
+
+
+    def delete(self, request, *args, **kwargs):
+        product_id = request.data.get('id')
+        response = super().delete(request, *args, **kwargs)
+
+        if response.status_code == 204:
+            from django.core.cache import cache
+
+            cache.delete(f'product_data_{product_id}')
+
+        return response
+
+    def update(self, request, *args, **kwargs):
+        response = super().update(request, *args, **kwargs)
+
+        if response.status_code == 200:
+            from django.core.cache import cache
+
+            product = response.data
+
+            # Adding product to cache
+            cache.set(f"product_data_{product['id']}", {
+                'product_name': product['product_name'],
+                'description': product['description'],
+                'price': product['price'],
+            })
 
         return response
