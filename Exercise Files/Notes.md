@@ -7,3 +7,8 @@ http://localhost:8000/api/v1/products/
 ```
 curl -X POST http://localhost:8000/api/v1/products/new -d price=1.00 -d name='My Product' -d description='Hello World'
 ```
+
+### Destroy Products
+```
+curl -X DELETE http://localhost:8000/api/v1/products/5/destroy
+```
