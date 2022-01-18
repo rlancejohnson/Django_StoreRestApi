@@ -35,6 +35,8 @@ class ProductSerializer(serializers.ModelSerializer):
         help_text='Accepted format is "12:01 PM 16 April 2019"',
         style={'input_type': 'text', 'placeholder': '12:01 AM 28 July 2019'}
     )
+    photo = serializers.ImageField(default=None)
+    warranty = serializers.FileField(write_only=True, default=None)
 
     class Meta:
         model = Product
@@ -48,12 +50,23 @@ class ProductSerializer(serializers.ModelSerializer):
             'is_on_sale',
             'current_price',
             'cart_items',
+            'photo',
+            'warranty',
         )
 
     # get_ is a prefix to the cart_items var name
     def get_cart_items(self, instance):
         items = ShoppingCartItem.objects.filter(product=instance)
         return CartItemSerializer(items, many=True).data
+
+    def update(self, instance, validated_data):
+        if validated_data.get('warranty', None):
+            instance.description += '\n\nWarranty Information:\n'
+            instance.description += b'; '.join(
+                validated_data['warranty'].readlines()
+            ).decode()
+
+        return instance
 
     # def to_representation(self, instance):
     #     data = super().to_representation(instance)
