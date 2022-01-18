@@ -22,6 +22,7 @@ class ProductSerializer(serializers.ModelSerializer):
     # price = serializers.FloatField(min_value=1.00, max_value=100000)
     price = serializers.DecimalField(min_value=1, max_value=100000, max_digits=None, decimal_places=2)
     sale_start = serializers.DateTimeField(
+        required=False,
         input_formats={'%I:%M %p %d %B %Y'},
         format=None,
         allow_null=True,
@@ -29,6 +30,7 @@ class ProductSerializer(serializers.ModelSerializer):
         style={'input_type': 'text', 'placeholder': '12:01 AM 28 July 2019'}
     )
     sale_end = serializers.DateTimeField(
+        required=False,
         input_formats={'%I:%M %p %d %B %Y'},
         format=None,
         allow_null=True,
@@ -67,6 +69,10 @@ class ProductSerializer(serializers.ModelSerializer):
             ).decode()
 
         return instance
+
+    def create(self, validated_data):
+        validated_data.pop('warranty')
+        return Product.objects.create(**validated_data)
 
     # def to_representation(self, instance):
     #     data = super().to_representation(instance)
