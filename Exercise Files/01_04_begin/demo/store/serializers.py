@@ -3,6 +3,8 @@ from rest_framework import serializers
 from store.models import Product, ShoppingCartItem
 
 class CartItemSerializer(serializers.ModelSerializer):
+    quantity = serializers.IntegerField(min_value=1, max_value=100)
+
     class Meta:
         model = ShoppingCartItem
         fields = (
@@ -17,6 +19,22 @@ class ProductSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(min_length=2, max_length=100, source='name')
     description = serializers.CharField(min_length=2, max_length=200)
     cart_items = serializers.SerializerMethodField()
+    # price = serializers.FloatField(min_value=1.00, max_value=100000)
+    price = serializers.DecimalField(min_value=1, max_value=100000, max_digits=None, decimal_places=2)
+    sale_start = serializers.DateTimeField(
+        input_formats={'%I:%M %p %d %B %Y'},
+        format=None,
+        allow_null=True,
+        help_text='Accepted format is "12:01 PM 16 April 2019"',
+        style={'input_type': 'text', 'placeholder': '12:01 AM 28 July 2019'}
+    )
+    sale_end = serializers.DateTimeField(
+        input_formats={'%I:%M %p %d %B %Y'},
+        format=None,
+        allow_null=True,
+        help_text='Accepted format is "12:01 PM 16 April 2019"',
+        style={'input_type': 'text', 'placeholder': '12:01 AM 28 July 2019'}
+    )
 
     class Meta:
         model = Product
@@ -32,6 +50,7 @@ class ProductSerializer(serializers.ModelSerializer):
             'cart_items',
         )
 
+    # get_ is a prefix to the cart_items var name
     def get_cart_items(self, instance):
         items = ShoppingCartItem.objects.filter(product=instance)
         return CartItemSerializer(items, many=True).data
